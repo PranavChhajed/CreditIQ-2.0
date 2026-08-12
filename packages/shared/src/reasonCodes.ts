@@ -26,7 +26,7 @@ export const REASON_CODE_SENTENCES: Record<ReasonCode, string> = {
   epfo_vintage: 'The length of your current employment, as verified through EPFO.',
   employer_category: 'The category of your employer.',
   salary_stability: 'The consistency of your monthly salary credits.',
-  gst_filing_punctuality: 'The punctuality of your business's GST filings.',
+  gst_filing_punctuality: 'The punctuality of your business\'s GST filings.',
   business_vintage: 'The length of time your business has been registered.',
-  business_inflow_volatility: 'The consistency of your business's banking inflows.',
+  business_inflow_volatility: 'The consistency of your business\'s banking inflows.',
 };
