@@ -1,0 +1,18 @@
+{
+  "version": "policy-v1.0.0",
+  "products": {
+    "personal_loan": { "min_amount": 50000, "max_amount": 1500000, "max_tenure_months": 60, "foir_cap": 0.55 },
+    "business_loan": { "min_amount": 100000, "max_amount": 3000000, "max_tenure_months": 48, "foir_cap": 0.50 }
+  },
+  "grades": {
+    "A1": { "income_multiplier": 12, "tenure_factor": 1.0, "rate_pct": 13 },
+    "A2": { "income_multiplier": 10, "tenure_factor": 1.0, "rate_pct": 14 },
+    "A3": { "income_multiplier": 9,  "tenure_factor": 1.0, "rate_pct": 15 },
+    "B1": { "income_multiplier": 7,  "tenure_factor": 1.0, "rate_pct": 17 },
+    "B2": { "income_multiplier": 6,  "tenure_factor": 0.8, "rate_pct": 19 },
+    "B3": { "income_multiplier": 5,  "tenure_factor": 0.7, "rate_pct": 21 },
+    "C1": { "income_multiplier": 4,  "tenure_factor": 0.6, "rate_pct": 23 },
+    "C2": { "income_multiplier": 3,  "tenure_factor": 0.5, "rate_pct": 25 },
+    "C3": { "income_multiplier": 2,  "tenure_factor": 0.4, "rate_pct": 27 }
+  }
+}
