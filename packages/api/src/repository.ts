@@ -60,5 +60,5 @@ export interface DecisionSummary {
 export function listDecisions(db: Db, limit: number): DecisionSummary[] {
   return db.prepare(
     'SELECT applicant_id, outcome, grade, score, created_at FROM decisions ORDER BY created_at DESC LIMIT ?',
-  ).all(limit) as DecisionSummary[];
+  ).all(limit) as unknown as DecisionSummary[];
 }
