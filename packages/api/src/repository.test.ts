@@ -1,3 +1,5 @@
+// Uses node:test instead of Vitest: Vite/Vitest cannot resolve the node:sqlite builtin
+// as of this project's Vite version (pre-bundling strips the 'node:' protocol).
 import { strict as assert } from 'assert';
 import { test } from 'node:test';
 import { openDb } from './db.js';

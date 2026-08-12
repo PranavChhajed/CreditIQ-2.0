@@ -4,7 +4,7 @@
   "type": "module",
   "main": "src/server.ts",
   "scripts": {
-    "test": "tsx --test src/repository.test.ts",
+    "test": "tsx --test src/**/*.test.ts",
     "dev": "tsx watch src/server.ts"
   },
   "dependencies": {
@@ -17,7 +17,6 @@
     "@types/node": "^22.10.0",
     "supertest": "^7.0.0",
     "@types/supertest": "^6.0.2",
-    "tsx": "^4.19.0",
-    "vitest": "^2.0.5"
+    "tsx": "^4.19.0"
   }
 }
