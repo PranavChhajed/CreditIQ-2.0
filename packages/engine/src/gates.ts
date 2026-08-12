@@ -52,12 +52,16 @@ export function evaluateGates(fv: FeatureVector, foirCap: number): GateResult[] 
   });
 
   if (fv.segment === 'A') {
+    // Missing vintage data is treated as 0 months (a deliberate conservative default: an
+    // unknown employment vintage fails this gate rather than being skipped/waived).
     results.push({
       code: 'EMP_INSUFFICIENT_VINTAGE',
       passed: (fv.epfo_employment_vintage_months ?? 0) >= 12,
       detail: { epfo_employment_vintage_months: fv.epfo_employment_vintage_months },
     });
   } else {
+    // Same conservative default as above: missing business vintage data fails this gate
+    // rather than being treated as unknown/skip.
     results.push({
       code: 'BIZ_INSUFFICIENT_VINTAGE',
       passed: (fv.gst_registration_vintage_months ?? 0) >= 24,
