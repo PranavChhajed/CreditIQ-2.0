@@ -9,69 +9,88 @@ export function MonitoringPanel() {
   useEffect(() => {
     fetchMonitoringSummary()
       .then(setSummary)
-      .catch(() => setError('Could not load monitoring summary — is the API server running on http://localhost:3001?'));
+      .catch(() => setError('Could not reach the decision service. Start the API on port 3001 and reload.'));
   }, []);
 
-  if (error) return <p style={{ color: 'crimson' }}>{error}</p>;
-  if (!summary) return <p>Loading monitoring summary…</p>;
+  if (error) return <p className="notice error">{error}</p>;
+  if (!summary) return <p className="notice">Loading portfolio…</p>;
 
-  const maxScoreBucket = Math.max(1, ...summary.score_distribution.map((b) => b.count));
-  const maxGateHit = Math.max(1, ...summary.gate_hit_counts.map((g) => g.count));
+  if (summary.total_decisions === 0) {
+    return (
+      <section className="panel">
+        <h2 className="panel-title">Nothing decided yet</h2>
+        <p className="empty">Run an applicant from either of the other two tabs and the distributions will build up here.</p>
+      </section>
+    );
+  }
+
+  const maxScore = Math.max(1, ...summary.score_distribution.map((b) => b.count));
+  const maxGate = Math.max(1, ...summary.gate_hit_counts.map((g) => g.count));
+  const grades = Object.entries(summary.grade_distribution);
+  const maxGrade = Math.max(1, ...grades.map(([, c]) => c ?? 0));
 
   return (
-    <div>
-      <p>{summary.total_decisions} decisions recorded — {summary.outcome_counts.approve} approved, {summary.outcome_counts.reject} rejected.</p>
+    <>
+      <p className="eyebrow">Portfolio to date</p>
+      <div className="metrics">
+        <div className="metric">
+          <div className="metric-figure">{summary.total_decisions}</div>
+          <div className="metric-label">Decisions</div>
+        </div>
+        <div className="metric">
+          <div className="metric-figure approve">{summary.outcome_counts.approve}</div>
+          <div className="metric-label">Approved</div>
+        </div>
+        <div className="metric">
+          <div className="metric-figure reject">{summary.outcome_counts.reject}</div>
+          <div className="metric-label">Declined</div>
+        </div>
+      </div>
 
-      <section>
-        <h3>Score distribution</h3>
-        {summary.total_decisions === 0 ? (
-          <p>No scored decisions yet.</p>
-        ) : (
-          <ul style={{ listStyle: 'none', padding: 0 }}>
-            {summary.score_distribution.map((b) => (
-              <li key={b.min} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ width: 80, fontVariantNumeric: 'tabular-nums' }}>{b.min}–{b.max}</span>
-                <span
-                  style={{ background: '#4a90d9', height: 14, width: `${(b.count / maxScoreBucket) * 200}px` }}
-                />
-                <span>{b.count}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <div className="charts">
+        <section className="panel">
+          <h2 className="panel-title">Score distribution</h2>
+          {summary.score_distribution.map((b) => (
+            <div className="bar-row" key={b.min}>
+              <span className="bar-label">{b.min}–{b.max}</span>
+              <span className="bar-track">
+                <span className="bar-fill" style={{ width: `${(b.count / maxScore) * 100}%` }} />
+              </span>
+              <span className="bar-count">{b.count}</span>
+            </div>
+          ))}
+        </section>
 
-      <section>
-        <h3>Grade distribution</h3>
-        {Object.keys(summary.grade_distribution).length === 0 ? (
-          <p>No graded decisions yet.</p>
-        ) : (
-          <ul>
-            {Object.entries(summary.grade_distribution).map(([grade, count]) => (
-              <li key={grade}>{grade}: {count}</li>
-            ))}
-          </ul>
-        )}
-      </section>
+        <section className="panel">
+          <h2 className="panel-title">Grades awarded</h2>
+          {grades.length === 0 && <p className="empty">No graded decisions yet.</p>}
+          {grades.map(([grade, count]) => (
+            <div className="bar-row" key={grade}>
+              <span className="bar-label">{grade}</span>
+              <span className="bar-track">
+                <span className="bar-fill" style={{ width: `${((count ?? 0) / maxGrade) * 100}%` }} />
+              </span>
+              <span className="bar-count">{count}</span>
+            </div>
+          ))}
+        </section>
 
-      <section>
-        <h3>Gate-hit counts</h3>
-        {summary.gate_hit_counts.length === 0 ? (
-          <p>No gate or validation rejections yet.</p>
-        ) : (
-          <ul style={{ listStyle: 'none', padding: 0 }}>
-            {summary.gate_hit_counts.map((g) => (
-              <li key={g.code} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ width: 220, fontVariantNumeric: 'tabular-nums' }}>{g.code}</span>
-                <span
-                  style={{ background: '#d94a4a', height: 14, width: `${(g.count / maxGateHit) * 200}px` }}
-                />
-                <span>{g.count}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-    </div>
+        <section className="panel">
+          <h2 className="panel-title">Where files were stopped</h2>
+          {summary.gate_hit_counts.length === 0 && (
+            <p className="empty">No file has been stopped at a gate yet.</p>
+          )}
+          {summary.gate_hit_counts.map((g) => (
+            <div className="bar-row" key={g.code}>
+              <span className="bar-label wide">{g.code}</span>
+              <span className="bar-track">
+                <span className="bar-fill gate" style={{ width: `${(g.count / maxGate) * 100}%` }} />
+              </span>
+              <span className="bar-count">{g.count}</span>
+            </div>
+          ))}
+        </section>
+      </div>
+    </>
   );
 }

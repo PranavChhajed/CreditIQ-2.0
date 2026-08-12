@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import type { EmployerCategory, LoanPurpose, RawApplicant, Segment } from '@creditiq/shared';
 import { fetchPersonas, type PersonaSummary } from '../api.js';
 
@@ -49,22 +49,16 @@ function blankApplicant(): RawApplicant {
   };
 }
 
-const row: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 3 };
-const labelStyle: CSSProperties = { fontSize: 12, color: '#444' };
-const inputStyle: CSSProperties = { padding: '5px 7px', border: '1px solid #bbb', borderRadius: 2, font: 'inherit', fontSize: 13 };
-const gridStyle: CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 12 };
-const fieldsetStyle: CSSProperties = { border: '1px solid #ccc', borderRadius: 3, padding: '12px 14px 14px', margin: '0 0 14px' };
-const legendStyle: CSSProperties = { fontSize: 12, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', padding: '0 6px' };
 
 function Num({ label, value, onChange, hint, min, max, step }: {
   label: string; value: number; onChange: (n: number) => void; hint?: string;
   min?: number; max?: number; step?: number;
 }) {
   return (
-    <label style={row}>
-      <span style={labelStyle}>{label}{hint && <em style={{ color: '#888', fontStyle: 'normal' }}> · {hint}</em>}</span>
+    <label className="field">
+      <span className="field-label">{label}{hint && <em className="field-hint"> · {hint}</em>}</span>
       <input
-        type="number" value={value} min={min} max={max} step={step ?? 1} style={inputStyle}
+        type="number" value={value} min={min} max={max} step={step ?? 1} className="input"
         onChange={(e) => onChange(e.target.value === '' ? 0 : Number(e.target.value))}
       />
     </label>
@@ -73,7 +67,7 @@ function Num({ label, value, onChange, hint, min, max, step }: {
 
 function Bool({ label, value, onChange }: { label: string; value: boolean; onChange: (b: boolean) => void }) {
   return (
-    <label style={{ display: 'flex', gap: 7, alignItems: 'center', fontSize: 13 }}>
+    <label className="check">
       <input type="checkbox" checked={value} onChange={(e) => onChange(e.target.checked)} />
       {label}
     </label>
@@ -84,9 +78,9 @@ function Select<T extends string>({ label, value, options, onChange }: {
   label: string; value: T; options: readonly T[]; onChange: (v: T) => void;
 }) {
   return (
-    <label style={row}>
-      <span style={labelStyle}>{label}</span>
-      <select value={value} style={inputStyle} onChange={(e) => onChange(e.target.value as T)}>
+    <label className="field">
+      <span className="field-label">{label}</span>
+      <select value={value} className="input" onChange={(e) => onChange(e.target.value as T)}>
         {options.map((o) => <option key={o} value={o}>{o.replace(/_/g, ' ')}</option>)}
       </select>
     </label>
@@ -95,8 +89,8 @@ function Select<T extends string>({ label, value, options, onChange }: {
 
 function Group({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <fieldset style={fieldsetStyle}>
-      <legend style={legendStyle}>{title}</legend>
+    <fieldset className="group">
+      <legend className="group-legend">{title}</legend>
       {children}
     </fieldset>
   );
@@ -149,47 +143,48 @@ export function ApplicantForm({ onEvaluate, submitting }: {
   }
 
   return (
-    <form onSubmit={handleSubmit} style={{ maxWidth: 860 }}>
-      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', marginBottom: 16, flexWrap: 'wrap' }}>
-        <label style={row}>
-          <span style={labelStyle}>Start from an example (optional)</span>
-          <select defaultValue="" style={inputStyle} onChange={(e) => e.target.value && prefill(e.target.value)}>
+    <form onSubmit={handleSubmit} className="panel">
+      <h2 className="panel-title">Enter a borrower&rsquo;s details</h2>
+      <div className="row" style={{ marginBottom: 18 }}>
+        <label className="field" style={{ minWidth: 300 }}>
+          <span className="field-label">Start from an example, then edit</span>
+          <select defaultValue="" className="input" onChange={(e) => e.target.value && prefill(e.target.value)}>
             <option value="">Blank applicant…</option>
             {personas.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
           </select>
         </label>
-        <button type="button" style={{ ...inputStyle, cursor: 'pointer' }} onClick={() => setA(blankApplicant())}>
+        <button type="button" className="btn" onClick={() => setA(blankApplicant())}>
           Reset
         </button>
       </div>
 
       <Group title="Applicant and product">
-        <div style={gridStyle}>
-          <label style={row}>
-            <span style={labelStyle}>Reference ID</span>
-            <input value={a.applicant_id} style={inputStyle} onChange={(e) => set('applicant_id', e.target.value)} />
+        <div className="grid">
+          <label className="field">
+            <span className="field-label">Reference ID</span>
+            <input value={a.applicant_id} className="input" onChange={(e) => set('applicant_id', e.target.value)} />
           </label>
           <Num label="Age (years)" value={a.applicant_age_years} min={18} max={100} onChange={(n) => set('applicant_age_years', n)} />
-          <label style={row}>
-            <span style={labelStyle}>Segment</span>
-            <select value={a.segment} style={inputStyle} onChange={(e) => setSegment(e.target.value as Segment)}>
+          <label className="field">
+            <span className="field-label">Segment</span>
+            <select value={a.segment} className="input" onChange={(e) => setSegment(e.target.value as Segment)}>
               <option value="A">A — Salaried</option>
               <option value="D">D — MSME</option>
             </select>
           </label>
-          <label style={row}>
-            <span style={labelStyle}>Product <em style={{ color: '#888', fontStyle: 'normal' }}>· set by segment</em></span>
-            <input value={a.requested_product.replace(/_/g, ' ')} readOnly style={{ ...inputStyle, background: '#eee', color: '#555' }} />
+          <label className="field">
+            <span className="field-label">Product <em className="field-hint">· set by segment</em></span>
+            <input value={a.requested_product.replace(/_/g, ' ')} readOnly className="input" />
           </label>
         </div>
       </Group>
 
       <Group title="Credit bureau">
-        <div style={gridStyle}>
-          <label style={row}>
-            <span style={labelStyle}>Bureau score <em style={{ color: '#888', fontStyle: 'normal' }}>· 300–900</em></span>
+        <div className="grid">
+          <label className="field">
+            <span className="field-label">Bureau score <em className="field-hint">· 300–900</em></span>
             <input
-              type="number" min={300} max={900} style={inputStyle}
+              type="number" min={300} max={900} className="input"
               value={a.bureau_score ?? ''} placeholder="No bureau hit"
               onChange={(e) => set('bureau_score', e.target.value === '' ? null : Number(e.target.value))}
             />
@@ -224,7 +219,7 @@ export function ApplicantForm({ onEvaluate, submitting }: {
               onChange={(n) => set('delinquency_events', a.delinquency_events.map((x, j) => j === i ? { ...x, dpd: n } : x))}
             />
             <button
-              type="button" style={{ ...inputStyle, cursor: 'pointer' }}
+              type="button" className="btn"
               onClick={() => set('delinquency_events', a.delinquency_events.filter((_, j) => j !== i))}
             >
               Remove
@@ -232,7 +227,7 @@ export function ApplicantForm({ onEvaluate, submitting }: {
           </div>
         ))}
         <button
-          type="button" style={{ ...inputStyle, cursor: 'pointer' }}
+          type="button" className="btn"
           onClick={() => set('delinquency_events', [...a.delinquency_events, { months_ago: 6, dpd: 30 }])}
         >
           Add event
@@ -240,7 +235,7 @@ export function ApplicantForm({ onEvaluate, submitting }: {
       </Group>
 
       <Group title="Banking conduct">
-        <div style={gridStyle}>
+        <div className="grid">
           <Num label="Existing monthly obligations (₹)" value={a.existing_monthly_obligations} min={0} onChange={(n) => set('existing_monthly_obligations', n)} />
           <Num label="Avg monthly inflow, 6m (₹)" value={a.avg_monthly_bank_inflow_6m} min={0} onChange={(n) => set('avg_monthly_bank_inflow_6m', n)} />
           <Num label="Inflow volatility (%)" value={a.bank_inflow_volatility_pct} min={0} onChange={(n) => set('bank_inflow_volatility_pct', n)} />
@@ -252,7 +247,7 @@ export function ApplicantForm({ onEvaluate, submitting }: {
 
       {a.segment === 'A' ? (
         <Group title="Employment — Segment A">
-          <div style={gridStyle}>
+          <div className="grid">
             <Num
               label="EPFO vintage (months)" value={a.epfo_employment_vintage_months ?? 0} min={0} hint="gate under 12"
               onChange={(n) => set('epfo_employment_vintage_months', n)}
@@ -273,7 +268,7 @@ export function ApplicantForm({ onEvaluate, submitting }: {
         </Group>
       ) : (
         <Group title="Business — Segment D">
-          <div style={gridStyle}>
+          <div className="grid">
             <Num
               label="GST vintage (months)" value={a.gst_registration_vintage_months ?? 0} min={0} hint="gate under 24"
               onChange={(n) => set('gst_registration_vintage_months', n)}
@@ -303,7 +298,7 @@ export function ApplicantForm({ onEvaluate, submitting }: {
       )}
 
       <Group title="Loan request">
-        <div style={gridStyle}>
+        <div className="grid">
           <Num label="Requested amount (₹)" value={a.requested_amount} min={1} onChange={(n) => set('requested_amount', n)} />
           <Num label="Tenure (months)" value={a.requested_tenure_months} min={1} hint="age + tenure must stay under 60y" onChange={(n) => set('requested_tenure_months', n)} />
           <Select label="Purpose" value={a.loan_purpose} options={LOAN_PURPOSES} onChange={(v) => set('loan_purpose', v)} />
@@ -312,7 +307,7 @@ export function ApplicantForm({ onEvaluate, submitting }: {
 
       <button
         type="submit" disabled={submitting}
-        style={{ ...inputStyle, cursor: submitting ? 'default' : 'pointer', fontWeight: 600, padding: '9px 18px' }}
+        className="btn btn-primary"
       >
         {submitting ? 'Evaluating…' : 'Evaluate applicant'}
       </button>

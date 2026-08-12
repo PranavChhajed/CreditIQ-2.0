@@ -1,22 +1,42 @@
 import type { Decision } from '@creditiq/shared';
 
 export function DecisionPanel({ decision }: { decision: Decision }) {
-  const badgeColor = decision.outcome === 'approve' ? 'green' : 'crimson';
+  const approved = decision.outcome === 'approve';
+  const reduced = decision.reason_codes.some((r) => r.code === 'POL_AMOUNT_REDUCED');
+  const stampText = approved ? (reduced ? 'APPROVED\nREDUCED' : 'APPROVED') : 'REJECTED';
+
   return (
-    <section>
-      <h2 style={{ color: badgeColor }}>{decision.outcome.toUpperCase()}</h2>
-      {decision.grade && <p>Grade: {decision.grade} (score {decision.score})</p>}
-      {decision.outcome === 'approve' && (
-        <ul>
-          <li>Amount: ₹{decision.offer_amount?.toLocaleString('en-IN')}</li>
-          <li>Tenure: {decision.offer_tenure_months} months</li>
-          <li>Rate: {decision.offer_rate_pct}% p.a.</li>
-          <li>EMI: ₹{decision.offer_emi?.toFixed(0)}</li>
-        </ul>
+    <section className="panel file">
+      <div className="file-no">File {decision.applicant_id}</div>
+
+      {approved ? (
+        <>
+          {decision.grade && (
+            <div className="file-grade">GRADE {decision.grade} · SCORE {decision.score}</div>
+          )}
+          <p className="file-amount">₹{decision.offer_amount?.toLocaleString('en-IN')}</p>
+          <p className="file-terms">
+            {decision.offer_tenure_months} months<br />
+            {decision.offer_rate_pct}% p.a.<br />
+            EMI ₹{decision.offer_emi?.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+          </p>
+        </>
+      ) : (
+        <>
+          <p className="file-outcome reject">Not approved</p>
+          <p className="file-terms">
+            {decision.score === null
+              ? 'Closed before scoring — see the reason below.'
+              : `Score ${decision.score}, below the approval threshold.`}
+          </p>
+        </>
       )}
-      <p style={{ fontSize: '0.8em', color: '#666' }}>
+
+      <p className="file-versions">
         model {decision.model_version} · policy {decision.policy_version}
       </p>
+
+      <div className={`stamp ${approved ? 'approve' : 'reject'}`} aria-hidden="true">{stampText}</div>
     </section>
   );
 }

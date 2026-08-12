@@ -39,27 +39,32 @@ export default function App() {
 
   const result = (
     <>
-      {loading && <p>Evaluating application…</p>}
-      {error && <p style={{ color: 'crimson' }}>{error}</p>}
+      {loading && <p className="notice">Evaluating application…</p>}
+      {error && <p className="notice error">{error}</p>}
       {decision && !loading && !error && (
-        <>
+        <div className="stack">
           <DecisionPanel decision={decision} />
           <ReasonCodesList decision={decision} />
           <WaterfallTrace decision={decision} />
           <OverridePanel decision={decision} />
-        </>
+        </div>
       )}
     </>
   );
 
   return (
-    <main>
-      <h1>CreditIQ</h1>
-      <nav>
-        <button disabled={tab === 'underwriter'} onClick={() => switchTab('underwriter')}>Example applicants</button>{' '}
-        <button disabled={tab === 'evaluate'} onClick={() => switchTab('evaluate')}>Enter an applicant</button>{' '}
-        <button disabled={tab === 'monitoring'} onClick={() => switchTab('monitoring')}>Monitoring</button>
-      </nav>
+    <main className="app">
+      <header className="app-header">
+        <h1 className="wordmark">
+          CREDITIQ
+          <span>Segment-specific underwriting · every decision auditable</span>
+        </h1>
+        <nav className="tabs">
+          <button disabled={tab === 'underwriter'} onClick={() => switchTab('underwriter')}>Example applicants</button>
+          <button disabled={tab === 'evaluate'} onClick={() => switchTab('evaluate')}>Enter an applicant</button>
+          <button disabled={tab === 'monitoring'} onClick={() => switchTab('monitoring')}>Monitoring</button>
+        </nav>
+      </header>
 
       {tab === 'underwriter' && (
         <>

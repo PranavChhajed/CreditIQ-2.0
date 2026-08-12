@@ -2,17 +2,21 @@ import type { Decision } from '@creditiq/shared';
 
 export function ReasonCodesList({ decision }: { decision: Decision }) {
   return (
-    <section>
-      <h3>Reason codes</h3>
-      <ol>
-        {decision.reason_codes.map((r) => (
-          <li key={r.code}>
-            <strong>{r.code}</strong>{typeof r.points === 'number' ? ` (${r.points > 0 ? '+' : ''}${r.points} pts)` : ''}
-            <br />
-            <span>{r.sentence}</span>
-          </li>
-        ))}
-      </ol>
+    <section className="panel">
+      <h2 className="panel-title">Why this decision</h2>
+      {decision.reason_codes.map((r) => (
+        <div className="reason" key={r.code}>
+          <div>
+            <span className="reason-code">{r.rank}. {r.code}</span>
+            <span className="reason-sentence">{r.sentence}</span>
+          </div>
+          {typeof r.points === 'number' && (
+            <span className={`reason-points ${r.points > 0 ? 'pos' : 'neg'}`}>
+              {r.points > 0 ? '+' : ''}{r.points}
+            </span>
+          )}
+        </div>
+      ))}
     </section>
   );
 }

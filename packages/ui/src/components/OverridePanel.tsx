@@ -41,55 +41,63 @@ export function OverridePanel({ decision }: { decision: Decision }) {
   if (loading) return <p>Loading override status…</p>;
 
   return (
-    <section>
-      <h3>Manual override</h3>
+    <section className="panel">
+      <h2 className="panel-title">Override this decision</h2>
       {override && (
-        <p>
-          Overridden to <strong>{override.override_outcome.toUpperCase()}</strong> by {override.overridden_by} on{' '}
-          {new Date(override.created_at).toLocaleString()} — {OVERRIDE_REASON_LABELS[override.reason_code]}
+        <p className="override-note">
+          Changed to <strong>{override.override_outcome === 'approve' ? 'approved' : 'declined'}</strong> by{' '}
+          {override.overridden_by} on {new Date(override.created_at).toLocaleString()} —{' '}
+          {OVERRIDE_REASON_LABELS[override.reason_code]}
           {override.reason_text && (
             <>
-              <br />“{override.reason_text}”
+              <br /><q>{override.reason_text}</q>
             </>
           )}
         </p>
       )}
-      {error && <p style={{ color: 'crimson' }}>{error}</p>}
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>
-            Override outcome to:{' '}
-            <select value={outcome} onChange={(e) => setOutcome(e.target.value as 'approve' | 'reject')}>
-              <option value="approve">Approve</option>
-              <option value="reject">Reject</option>
-            </select>
-          </label>
+      {error && <p className="notice error">{error}</p>}
+      <form onSubmit={handleSubmit} className="grid">
+        <div className="field">
+          <label className="field-label" htmlFor="ovr-outcome">Change outcome to</label>
+          <select
+            id="ovr-outcome" className="input" value={outcome}
+            onChange={(e) => setOutcome(e.target.value as 'approve' | 'reject')}
+          >
+            <option value="approve">Approve</option>
+            <option value="reject">Decline</option>
+          </select>
         </div>
-        <div>
-          <label>
-            Reason:{' '}
-            <select value={reasonCode} onChange={(e) => setReasonCode(e.target.value as OverrideReasonCode)}>
-              {OVERRIDE_REASON_CODES.map((code) => (
-                <option key={code} value={code}>{OVERRIDE_REASON_LABELS[code]}</option>
-              ))}
-            </select>
-          </label>
+        <div className="field">
+          <label className="field-label" htmlFor="ovr-reason">Reason</label>
+          <select
+            id="ovr-reason" className="input" value={reasonCode}
+            onChange={(e) => setReasonCode(e.target.value as OverrideReasonCode)}
+          >
+            {OVERRIDE_REASON_CODES.map((code) => (
+              <option key={code} value={code}>{OVERRIDE_REASON_LABELS[code]}</option>
+            ))}
+          </select>
         </div>
-        <div>
-          <label>
-            Notes:{' '}
-            <textarea value={reasonText} onChange={(e) => setReasonText(e.target.value)} rows={2} />
-          </label>
+        <div className="field">
+          <label className="field-label" htmlFor="ovr-notes">Notes</label>
+          <textarea
+            id="ovr-notes" className="input" value={reasonText} rows={2}
+            onChange={(e) => setReasonText(e.target.value)}
+          />
         </div>
-        <div>
-          <label>
-            Your name:{' '}
-            <input value={overriddenBy} onChange={(e) => setOverriddenBy(e.target.value)} required />
-          </label>
+        <div className="field">
+          <label className="field-label" htmlFor="ovr-name">Your name</label>
+          <input
+            id="ovr-name" className="input" value={overriddenBy} required
+            onChange={(e) => setOverriddenBy(e.target.value)}
+          />
+          <button
+            type="submit" className="btn btn-primary" style={{ marginTop: 10, alignSelf: 'flex-start' }}
+            disabled={submitting || !overriddenBy.trim()}
+          >
+            {submitting ? 'Saving…' : override ? 'Update override' : 'Record override'}
+          </button>
         </div>
-        <button type="submit" disabled={submitting || !overriddenBy.trim()}>
-          {submitting ? 'Saving…' : override ? 'Update override' : 'Submit override'}
-        </button>
       </form>
     </section>
   );
