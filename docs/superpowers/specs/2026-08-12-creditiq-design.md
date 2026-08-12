@@ -122,18 +122,20 @@ Matches PRD §8's category counts exactly: 2 routing, 13 bureau, 5 banking, 3 em
 
 Every applicant starts at **500**. Each factor below contributes points via a monotonic bucket lookup — no cliffs, no interpolation. Final score clamped to `[0, 1000]`.
 
+**Boundary convention (applies to every table below):** every bucket is a half-open interval `[min, next_min)` — a value exactly equal to a listed threshold always belongs to the bucket *starting* at that threshold, never the one below it. This is one uniform rule for all 11 tables, matching the `bucketScore` helper's actual mechanism (picks the bucket with the largest `min` that is `<= value`) exactly, so no per-table exception or epsilon-adjustment is ever needed. (This corrects the v1 draft of this section, which stated several of these boundaries with mixed `≤`/`>` wording — e.g. "≤0.30" for FOIR — that read as the opposite convention. The code was written straight from this table's *numbers*, which were always right; only the inclusive/exclusive wording was inconsistent. No code changes were needed to resolve this — see Task 6's ledger entry.)
+
 ### Shared factors (both segments)
 
 | Factor | Buckets → points |
 |---|---|
-| **Bureau score** (±90) | ≥800: +90 · 750–799: +65 · 700–749: +40 · 650–699: +15 · 600–649: −20 · 550–599: −50 · <550: −90 |
-| **Utilisation level** (±40) | <30%: +40 · 30–50%: +20 · 50–70%: 0 · 70–85%: −20 · >85%: −40 |
-| **Utilisation 3m trend** (±35) | improved ≥10pp: +35 · improved 0–10pp: +15 · flat ±2pp: 0 · worsened 0–10pp: −20 · worsened >10pp: −35 |
-| **FOIR post-EMI** (±60) | ≤0.30: +60 · 0.30–0.40: +30 · 0.40–0.45: 0 · 0.45–0.50: −30 · >0.50 up to cap: −60 |
+| **Bureau score** (±90) | ≥800: +90 · [750,800): +65 · [700,750): +40 · [650,700): +15 · [600,650): −20 · [550,600): −50 · <550: −90 |
+| **Utilisation level** (±40) | <30%: +40 · [30,50)%: +20 · [50,70)%: 0 · [70,85)%: −20 · ≥85%: −40 |
+| **Utilisation 3m trend**, delta = current% − 3m-ago% (±35) | delta<−10: +35 · [−10,−2): +15 · [−2,2): 0 · [2,10): −20 · delta≥10: −35 |
+| **FOIR post-EMI** (±60) | <0.30: +60 · [0.30,0.40): +30 · [0.40,0.45): 0 · [0.45,0.50): −30 · ≥0.50 (up to product cap): −60 |
 | **Insufficient-funds bounces** (±50) | 0: +50 · 1: +10 · 2: −25 · ≥3: −50 |
-| **Delinquency recency-wt** (±70) | 0: +70 · low (0–15): +30 · moderate (15–40): −20 · high (40–80): −50 · severe (>80): −70 |
-| **Credit history age** (±30) | ≥84mo: +30 · 48–83: +15 · 24–47: 0 · 12–23: −15 · <12: −30 |
-| **Enquiries per lender** (±35) | ≤1.2: +35 · 1.2–2: +10 · 2–3: −15 · >3: −35 |
+| **Delinquency recency-wt** (±70) | 0: +70 · (0,15): +30 · [15,40): −20 · [40,80): −50 · ≥80: −70 |
+| **Credit history age** (±30) | ≥84mo: +30 · [48,84): +15 · [24,48): 0 · [12,24): −15 · <12: −30 |
+| **Enquiries per lender** (±35) | <1.2: +35 · [1.2,2): +10 · [2,3): −15 · ≥3: −35 |
 
 Max shared swing: +410 / −410.
 
@@ -141,17 +143,17 @@ Max shared swing: +410 / −410.
 
 | Factor | Buckets → points |
 |---|---|
-| **EPFO vintage** (±45) | ≥60mo: +45 · 36–59: +25 · 24–35: +10 · 12–23: −10 |
+| **EPFO vintage** (±45) | ≥60mo: +45 · [36,60): +25 · [24,36): +10 · [12,24): −10 |
 | **Employer category** (±25) | govt/PSU/listed-large: +25 · mid-size: +10 · small/unlisted: −15 · unverifiable: −25 |
-| **Salary inflow stability** (±35) | ≥95%: +35 · 85–94%: +15 · 70–84%: −10 · <70%: −35 |
+| **Salary inflow stability** (±35) | ≥95%: +35 · [85,95)%: +15 · [70,85)%: −10 · <70%: −35 |
 
 ### Segment D adds
 
 | Factor | Buckets → points |
 |---|---|
-| **GST filing punctuality** (±80, heaviest single factor) | 0 late/12m: +80 · 1–2 late: +30 · 3–5 late: −30 · 6–8 late: −60 · ≥9 late: −80 |
-| **Business vintage** (±40) | ≥60mo: +40 · 36–59: +20 · 24–35: 0 |
-| **Business inflow volatility** (±40) | <15%: +40 · 15–30%: +15 · 30–50%: −20 · >50%: −40 |
+| **GST filing punctuality** (±80, heaviest single factor) | 0 late/12m: +80 · [1,3): +30 · [3,6): −30 · [6,9): −60 · ≥9: −80 |
+| **Business vintage** (±40) | ≥60mo: +40 · [36,60): +20 · [24,36): 0 |
+| **Business inflow volatility** (±40) | <15%: +40 · [15,30)%: +15 · [30,50)%: −20 · ≥50%: −40 |
 
 Max total swing: A = +515/−410 (score range ~90–1000 pre-clamp, clamps only at the very top). D = +570/−570.
 
