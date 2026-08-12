@@ -7,7 +7,7 @@ type Derived = Pick<
   'drv_enquiry_per_lender' | 'drv_delinquency_recency_wt' | 'drv_proposed_emi'
 >;
 
-function standardEmi(principal: number, annualRatePct: number, tenureMonths: number): number {
+export function standardEmi(principal: number, annualRatePct: number, tenureMonths: number): number {
   const r = annualRatePct / 12 / 100;
   if (r === 0) return principal / tenureMonths;
   const factor = Math.pow(1 + r, tenureMonths);

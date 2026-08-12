@@ -8,6 +8,7 @@ import { computeOffer, loadPolicy } from './policy.js';
 import { rankScoreFactors, gateReasonCode, policyReasonCode } from './rank.js';
 import { buildTrace } from './trace.js';
 import { MODEL_VERSION } from './version.js';
+import { standardEmi } from './derive.js';
 
 const policy = loadPolicy();
 
@@ -76,7 +77,7 @@ export function decide(rawInput: unknown): Decision {
 
   const offerEmiRate = offer.ratePct;
   const offerEmi = offer.outcome === 'approve' && offer.amount && offer.tenureMonths && offerEmiRate
-    ? standardEmiForTrace(offer.amount, offerEmiRate, offer.tenureMonths)
+    ? standardEmi(offer.amount, offerEmiRate, offer.tenureMonths)
     : null;
 
   return {
@@ -91,8 +92,3 @@ export function decide(rawInput: unknown): Decision {
   };
 }
 
-function standardEmiForTrace(principal: number, annualRatePct: number, tenureMonths: number): number {
-  const r = annualRatePct / 12 / 100;
-  const factor = Math.pow(1 + r, tenureMonths);
-  return (principal * r * factor) / (factor - 1);
-}
