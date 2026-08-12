@@ -28,4 +28,4 @@ Then open the UI at **http://localhost:5173**. It proxies `/api` requests to the
 npm test
 ```
 
-Runs each workspace's test suite (`packages/shared`, `packages/engine`, and `packages/ui` via Vitest; `packages/api` via Node's built-in test runner).
+Runs each workspace's test suite (`packages/shared` and `packages/engine` via Vitest; `packages/api` via Node's built-in test runner). `packages/ui` has no test suite in v1 — verify it manually per "Run the demo" above.
