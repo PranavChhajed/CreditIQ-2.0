@@ -15,6 +15,7 @@ export const REASON_CODE_SENTENCES: Record<ReasonCode, string> = {
   BIZ_INSUFFICIENT_VINTAGE: 'Your business registration is more recent than the minimum we require.',
   POL_AMOUNT_REDUCED: 'Your approved amount was reduced based on your verified income and risk grade.',
   POL_BELOW_MIN_TICKET: 'The amount you are eligible for falls below the minimum loan size we offer.',
+  ADV_DEBT_CONSOLIDATION_RISING_UTIL: 'This loan is for debt consolidation, and your credit utilization has been rising — worth a closer look at underlying spending behavior.',
   bureau_score: 'Your credit bureau score.',
   utilization_level: 'How much of your available credit you are currently using.',
   utilization_trend: 'The recent trend in your credit utilization.',

@@ -5,7 +5,8 @@ import { evaluateGates, firstFailure } from './gates.js';
 import { computeScore } from './scoring/index.js';
 import { gradeForScore } from './grade.js';
 import { computeOffer, loadPolicy } from './policy.js';
-import { rankScoreFactors, gateReasonCode, policyReasonCode } from './rank.js';
+import { rankScoreFactors, gateReasonCode, appendReasonCode } from './rank.js';
+import { detectAdvisories } from './advisories.js';
 import { buildTrace } from './trace.js';
 import { MODEL_VERSION } from './version.js';
 import { standardEmi } from './derive.js';
@@ -51,7 +52,8 @@ export function decide(rawInput: unknown): Decision {
   const grade = gradeForScore(score);
 
   if (!grade) {
-    const reasonCodes = rankScoreFactors(factors);
+    let reasonCodes = rankScoreFactors(factors);
+    for (const advisory of detectAdvisories(fv)) reasonCodes = appendReasonCode(advisory, reasonCodes);
     return {
       applicant_id: fv.applicant_id, outcome: 'reject', grade: null, score,
       offer_amount: null, offer_tenure_months: null, offer_rate_pct: null, offer_emi: null,
@@ -73,7 +75,8 @@ export function decide(rawInput: unknown): Decision {
   );
 
   let reasonCodes = rankScoreFactors(factors);
-  if (offer.reasonCode) reasonCodes = policyReasonCode(offer.reasonCode, reasonCodes);
+  for (const advisory of detectAdvisories(fv)) reasonCodes = appendReasonCode(advisory, reasonCodes);
+  if (offer.reasonCode) reasonCodes = appendReasonCode(offer.reasonCode, reasonCodes);
 
   const offerEmiRate = offer.ratePct;
   const offerEmi = offer.outcome === 'approve' && offer.amount && offer.tenureMonths && offerEmiRate

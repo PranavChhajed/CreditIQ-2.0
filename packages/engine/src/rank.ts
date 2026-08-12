@@ -19,6 +19,7 @@ export function gateReasonCode(code: ReasonCode): RankedReasonCode[] {
   return [{ rank: 1, code, sentence: REASON_CODE_SENTENCES[code] }];
 }
 
-export function policyReasonCode(code: ReasonCode, existing: RankedReasonCode[]): RankedReasonCode[] {
+/** Appends one more reason code at the next rank. Used for policy adjustments (e.g. POL_AMOUNT_REDUCED) and advisory flags (e.g. ADV_*) alike — neither carries a `points` value. */
+export function appendReasonCode(code: ReasonCode, existing: RankedReasonCode[]): RankedReasonCode[] {
   return [...existing, { rank: existing.length + 1, code, sentence: REASON_CODE_SENTENCES[code] }];
 }

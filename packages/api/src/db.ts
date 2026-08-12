@@ -18,6 +18,19 @@ CREATE TABLE IF NOT EXISTS decisions (
   trace_json TEXT NOT NULL,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+-- F14: one override per decision (latest replaces prior, same last-write-wins convention as
+-- decisions above). The referenced decisions row is never mutated by an override.
+CREATE TABLE IF NOT EXISTS overrides (
+  applicant_id TEXT PRIMARY KEY,
+  original_outcome TEXT NOT NULL,
+  override_outcome TEXT NOT NULL,
+  reason_code TEXT NOT NULL,
+  reason_text TEXT,
+  overridden_by TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (applicant_id) REFERENCES decisions(applicant_id)
+);
 `;
 
 export function openDb(path: string): Db {

@@ -104,7 +104,9 @@ export type ScoreReasonCode =
 
 export type PolicyReasonCode = 'POL_AMOUNT_REDUCED' | 'POL_BELOW_MIN_TICKET';
 
-export type ReasonCode = GateCode | ScoreReasonCode | PolicyReasonCode;
+export type AdvisoryReasonCode = 'ADV_DEBT_CONSOLIDATION_RISING_UTIL';
+
+export type ReasonCode = GateCode | ScoreReasonCode | PolicyReasonCode | AdvisoryReasonCode;
 
 export type Grade =
   | 'A1' | 'A2' | 'A3' | 'B1' | 'B2' | 'B3' | 'C1' | 'C2' | 'C3'
@@ -137,4 +139,46 @@ export interface Decision {
   trace: TraceStep[];
   model_version: string;
   policy_version: string;
+}
+
+export type OverrideReasonCode =
+  | 'OVR_ADDITIONAL_DOCS_VERIFIED'
+  | 'OVR_RISK_APPETITE_EXCEPTION'
+  | 'OVR_POLICY_EXCEPTION'
+  | 'OVR_DATA_QUALITY_ISSUE'
+  | 'OVR_OTHER';
+
+/**
+ * F14 — outcome-only override, recorded separately from the Decision it refers to.
+ * The original Decision row is never mutated (N5: full audit trail must be reconstructable);
+ * this is a linked, independently timestamped correction.
+ */
+export interface DecisionOverride {
+  applicant_id: string;
+  original_outcome: 'approve' | 'reject';
+  override_outcome: 'approve' | 'reject';
+  reason_code: OverrideReasonCode;
+  reason_text: string | null;
+  overridden_by: string;
+  created_at: string;
+}
+
+export interface ScoreBucketCount {
+  min: number;
+  max: number;
+  count: number;
+}
+
+export interface GateHitCount {
+  code: GateCode;
+  count: number;
+}
+
+/** F15 — aggregated over all persisted decisions, computed on read (no separate stored state). */
+export interface MonitoringSummary {
+  total_decisions: number;
+  outcome_counts: { approve: number; reject: number };
+  grade_distribution: Partial<Record<Grade, number>>;
+  score_distribution: ScoreBucketCount[];
+  gate_hit_counts: GateHitCount[];
 }

@@ -4,9 +4,12 @@ import { PersonaPicker } from './components/PersonaPicker.js';
 import { DecisionPanel } from './components/DecisionPanel.js';
 import { ReasonCodesList } from './components/ReasonCodesList.js';
 import { WaterfallTrace } from './components/WaterfallTrace.js';
+import { MonitoringPanel } from './components/MonitoringPanel.js';
+import { OverridePanel } from './components/OverridePanel.js';
 import { submitDecision } from './api.js';
 
 export default function App() {
+  const [tab, setTab] = useState<'underwriter' | 'monitoring'>('underwriter');
   const [decision, setDecision] = useState<Decision | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,17 +30,29 @@ export default function App() {
 
   return (
     <main>
-      <h1>CreditIQ — Underwriter</h1>
-      <PersonaPicker onSelect={handleSelect} />
-      {loading && <p>Evaluating application…</p>}
-      {error && <p style={{ color: 'crimson' }}>{error}</p>}
-      {decision && !loading && !error && (
+      <h1>CreditIQ</h1>
+      <nav>
+        <button disabled={tab === 'underwriter'} onClick={() => setTab('underwriter')}>Underwriter</button>{' '}
+        <button disabled={tab === 'monitoring'} onClick={() => setTab('monitoring')}>Monitoring</button>
+      </nav>
+
+      {tab === 'underwriter' && (
         <>
-          <DecisionPanel decision={decision} />
-          <ReasonCodesList decision={decision} />
-          <WaterfallTrace decision={decision} />
+          <PersonaPicker onSelect={handleSelect} />
+          {loading && <p>Evaluating application…</p>}
+          {error && <p style={{ color: 'crimson' }}>{error}</p>}
+          {decision && !loading && !error && (
+            <>
+              <DecisionPanel decision={decision} />
+              <ReasonCodesList decision={decision} />
+              <WaterfallTrace decision={decision} />
+              <OverridePanel decision={decision} />
+            </>
+          )}
         </>
       )}
+
+      {tab === 'monitoring' && <MonitoringPanel />}
     </main>
   );
 }

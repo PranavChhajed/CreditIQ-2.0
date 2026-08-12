@@ -162,4 +162,12 @@ export const PERSONAS: Persona[] = [
       insufficient_funds_bounce_count_6m: 2, requested_amount: 150000,
     }),
   },
+  {
+    id: 'a-debt-consolidation-rising-util', label: 'Salaried, debt consolidation with rising utilization (F13 advisory)',
+    segment: 'A', expectedOutcome: 'approve', expectedGrade: 'A2',
+    raw: baseA({
+      applicant_id: 'a-debt-consolidation-rising-util', loan_purpose: 'debt_consolidation',
+      credit_utilization_pct_current: 45, credit_utilization_pct_3m_ago: 40,
+    }),
+  },
 ];

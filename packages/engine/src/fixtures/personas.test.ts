@@ -3,8 +3,8 @@ import { decide } from '../decide.js';
 import { PERSONAS } from './personas.js';
 
 describe('synthetic personas (PRD §12 acceptance test)', () => {
-  it('has exactly 16 personas covering both segments', () => {
-    expect(PERSONAS).toHaveLength(16);
+  it('has exactly 17 personas covering both segments', () => {
+    expect(PERSONAS).toHaveLength(17);
     expect(PERSONAS.some((p) => p.segment === 'A')).toBe(true);
     expect(PERSONAS.some((p) => p.segment === 'D')).toBe(true);
   });
@@ -39,5 +39,12 @@ describe('synthetic personas (PRD §12 acceptance test)', () => {
     const decision = decide(persona.raw);
     expect(decision.score).toBeNull();
     expect(decision.reason_codes[0].code).toBe('BUR_LIVE_OVERDUE');
+  });
+
+  it('F13: flags debt consolidation with rising utilization as an advisory reason code', () => {
+    const persona = PERSONAS.find((p) => p.id === 'a-debt-consolidation-rising-util')!;
+    const decision = decide(persona.raw);
+    expect(decision.outcome).toBe('approve');
+    expect(decision.reason_codes.some((r) => r.code === 'ADV_DEBT_CONSOLIDATION_RISING_UTIL')).toBe(true);
   });
 });
