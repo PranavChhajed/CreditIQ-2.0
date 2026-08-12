@@ -11,8 +11,10 @@ export function createApp(db: Db): Express {
   const app = express();
   app.use(express.json());
 
+  // `raw` is included so the UI can prefill the manual-entry form from a persona and let the
+  // user edit individual parameters, rather than requiring all 32 fields to be typed by hand.
   app.get('/api/personas', (_req, res) => {
-    res.json(PERSONAS.map((p) => ({ id: p.id, label: p.label, segment: p.segment })));
+    res.json(PERSONAS.map((p) => ({ id: p.id, label: p.label, segment: p.segment, raw: p.raw })));
   });
 
   app.post('/api/decisions', (req, res) => {
@@ -23,6 +25,24 @@ export function createApp(db: Db): Express {
       return;
     }
     const decision = decide(persona.raw);
+    saveDecision(db, decision);
+    res.json(decision);
+  });
+
+  /**
+   * Evaluates an applicant supplied directly in the request body, rather than a stored fixture.
+   * The engine already validates the full payload itself (F1) and returns a VAL_SCHEMA_INVALID
+   * reject Decision for bad input, so no validation is duplicated here — the only pre-check is
+   * applicant_id, because a blank one would make decide() fall back to the literal id 'unknown'
+   * and every invalid submission would then overwrite the same persisted row.
+   */
+  app.post('/api/decisions/evaluate', (req, res) => {
+    const body = req.body as { applicant_id?: unknown };
+    if (typeof body?.applicant_id !== 'string' || body.applicant_id.trim() === '') {
+      res.status(400).json({ error: 'applicant_id is required and must be a non-empty string' });
+      return;
+    }
+    const decision = decide(req.body);
     saveDecision(db, decision);
     res.json(decision);
   });

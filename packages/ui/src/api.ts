@@ -1,9 +1,10 @@
-import type { Decision, DecisionOverride, MonitoringSummary, OverrideReasonCode } from '@creditiq/shared';
+import type { Decision, DecisionOverride, MonitoringSummary, OverrideReasonCode, RawApplicant } from '@creditiq/shared';
 
 export interface PersonaSummary {
   id: string;
   label: string;
   segment: 'A' | 'D';
+  raw: RawApplicant;
 }
 
 export async function fetchPersonas(): Promise<PersonaSummary[]> {
@@ -22,6 +23,24 @@ export async function submitDecision(applicantId: string): Promise<Decision> {
   });
   if (!res.ok) {
     throw new Error(`Failed to submit decision: ${res.status} ${res.statusText}`);
+  }
+  return res.json();
+}
+
+/**
+ * Scores an applicant whose parameters were entered by hand, rather than a stored fixture.
+ * A schema-invalid payload still resolves — the engine returns a reject Decision carrying
+ * VAL_SCHEMA_INVALID — so the caller renders the reason instead of catching an error.
+ */
+export async function evaluateApplicant(raw: RawApplicant): Promise<Decision> {
+  const res = await fetch('/api/decisions/evaluate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(raw),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `Failed to evaluate applicant: ${res.status} ${res.statusText}`);
   }
   return res.json();
 }

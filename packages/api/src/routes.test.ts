@@ -6,6 +6,7 @@ import request from 'supertest';
 import type { Express } from 'express';
 import { createApp } from './routes.js';
 import { openDb } from './db.js';
+import { PERSONAS } from '@creditiq/engine/src/fixtures/personas.js';
 
 describe('routes', () => {
   let app: Express;
@@ -58,6 +59,48 @@ describe('routes', () => {
     assert.strictEqual(res.body.outcome_counts.approve, 1);
     assert.strictEqual(res.body.outcome_counts.reject, 1);
     assert.strictEqual(res.body.gate_hit_counts[0].code, 'BUR_LIVE_OVERDUE');
+  });
+
+  it('POST /api/decisions/evaluate scores a custom applicant supplied in the request body', async () => {
+    const persona = PERSONAS.find((p) => p.id === 'demo-2-msme-poor-gst')!;
+    const custom = { ...persona.raw, applicant_id: 'custom-test-1' };
+    const res = await request(app).post('/api/decisions/evaluate').send(custom);
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.body.applicant_id, 'custom-test-1');
+    assert.strictEqual(res.body.outcome, 'approve');
+    assert.ok(res.body.score > 0);
+    assert.ok(res.body.reason_codes.length > 0);
+
+    // persisted, so it shows up in monitoring and can be overridden like any other decision
+    const fetched = await request(app).get('/api/decisions/custom-test-1');
+    assert.strictEqual(fetched.status, 200);
+  });
+
+  it('POST /api/decisions/evaluate reflects edited parameters in the resulting decision', async () => {
+    const persona = PERSONAS.find((p) => p.id === 'demo-1-salaried-clean')!;
+    const clean = { ...persona.raw, applicant_id: 'custom-clean' };
+    const overdue = { ...persona.raw, applicant_id: 'custom-overdue', live_overdue_amount: 9000 };
+
+    const cleanRes = await request(app).post('/api/decisions/evaluate').send(clean);
+    const overdueRes = await request(app).post('/api/decisions/evaluate').send(overdue);
+
+    assert.strictEqual(cleanRes.body.outcome, 'approve');
+    assert.strictEqual(overdueRes.body.outcome, 'reject');
+    assert.strictEqual(overdueRes.body.score, null);
+    assert.strictEqual(overdueRes.body.reason_codes[0].code, 'BUR_LIVE_OVERDUE');
+  });
+
+  it('POST /api/decisions/evaluate returns a VAL_SCHEMA_INVALID decision for a malformed payload', async () => {
+    const res = await request(app).post('/api/decisions/evaluate').send({ applicant_id: 'bad-1', segment: 'Z' });
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.body.outcome, 'reject');
+    assert.strictEqual(res.body.reason_codes[0].code, 'VAL_SCHEMA_INVALID');
+    assert.strictEqual(res.body.score, null);
+  });
+
+  it('POST /api/decisions/evaluate 400s when applicant_id is missing', async () => {
+    const res = await request(app).post('/api/decisions/evaluate').send({ segment: 'A' });
+    assert.strictEqual(res.status, 400);
   });
 
   it('POST /api/decisions/:id/override records an outcome override with a structured reason', async () => {
