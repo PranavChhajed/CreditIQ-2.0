@@ -81,7 +81,9 @@ Matches PRD §8's category counts exactly: 2 routing, 13 bureau, 5 banking, 3 em
 | 35 | Derived | `drv_ticket_to_income` | number | requested_amount / (drv_income_verified × 12) |
 | 36 | Derived | `drv_enquiry_per_lender` | number | num_enquiries_30d / max(num_distinct_lenders_30d, 1) |
 | 37 | Derived | `drv_delinquency_recency_wt` | number | Σ over delinquency_events of `dpd × decay(months_ago)`; `decay(m) = 1 / (1 + m/12)` |
-| 38 | Derived | `drv_proposed_emi` | number | standard EMI formula at indicative rate for requested_amount/tenure |
+| 38 | Derived | `drv_proposed_emi` | number | standard EMI formula, see note below |
+
+> **Note on `drv_proposed_emi`**: this is computed at step 2 (gates), before grading/policy (steps 5–6) has determined the applicant's actual priced rate — the PRD doesn't address this ordering gap. Resolution: use a fixed **qualifying rate of 27% p.a.** (the worst-case rate across both products' policy matrices, §7) for this EMI estimate, applied uniformly regardless of eventual grade. This is the standard underwriting fix (a conservative flat qualifying rate for capacity-gate purposes, distinct from the priced rate) and keeps the FOIR gate conservative rather than circular. Once the actual grade is known, the policy step separately computes a real `offer_emi` (at the applicant's actual indicative rate) as a `Decision` output field — this is offer information, not a FeatureVector input, and is never fed back into gating or scoring.
 
 `declared_annual_turnover` is explicitly excluded from scoring (matches PRD's "turnover is not scored at all") but is a legitimate income-verification input — using it only for the conservative `min()` floor, never as a risk signal, is consistent with §7's test ("no plausible causal path to repayment" doesn't apply here; it's not used causally, only as a ceiling-check).
 
@@ -177,6 +179,8 @@ Max total swing: A = +515/−410 (score range ~90–1000 pre-clamp, clamps only 
 | D1–D3 | not approved | — | — |
 
 `offer_amount = min(requested_amount, drv_income_verified × multiplier)`, then capped by product ceiling (₹15,00,000 PL / ₹30,00,000 BL). If the resulting offer is below the product minimum (₹50,000 PL / ₹1,00,000 BL), outcome becomes **reject** with reason code `POL_BELOW_MIN_TICKET`. If offer < requested_amount, outcome stays **approve** with reason code `POL_AMOUNT_REDUCED`.
+
+On approval, the policy step also computes `offer_emi` (standard EMI formula at the grade's actual indicative rate, for `offer_amount`/`offer_tenure_months`) as a `Decision` output field — separate from the gate-stage `drv_proposed_emi` (see §2 note), and never fed back into scoring.
 
 `config/policy/v1.json` is loaded at runtime (not imported as a TS module) so it can change without a rebuild — satisfies N6/G5. Every decision stamps `policy_version` (the file's version field) and `model_version` (a constant in `engine/src/version.ts`) — F10.
 
