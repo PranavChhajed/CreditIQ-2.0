@@ -19,4 +19,54 @@ describe('scoreSegmentA', () => {
     const codes = scoreSegmentA(fv).map((s) => s.code).sort();
     expect(codes).toEqual(['employer_category', 'epfo_vintage', 'salary_stability'].sort());
   });
+
+  describe('boundary-value regression tests (spec §5 [min, next_min) intervals)', () => {
+    it('epfo_vintage at exactly 24 months resolves to 24 bucket → +10', () => {
+      const raw = validPersonaBase('A');
+      raw.epfo_employment_vintage_months = 24;
+      const fv = ingest(raw);
+      const scores = scoreSegmentA(fv);
+      expect(scores.find((s) => s.code === 'epfo_vintage')?.points).toBe(10);
+    });
+
+    it('epfo_vintage at exactly 36 months resolves to 36 bucket → +25', () => {
+      const raw = validPersonaBase('A');
+      raw.epfo_employment_vintage_months = 36;
+      const fv = ingest(raw);
+      const scores = scoreSegmentA(fv);
+      expect(scores.find((s) => s.code === 'epfo_vintage')?.points).toBe(25);
+    });
+
+    it('epfo_vintage at exactly 60 months resolves to 60 bucket → +45', () => {
+      const raw = validPersonaBase('A');
+      raw.epfo_employment_vintage_months = 60;
+      const fv = ingest(raw);
+      const scores = scoreSegmentA(fv);
+      expect(scores.find((s) => s.code === 'epfo_vintage')?.points).toBe(45);
+    });
+
+    it('salary_stability at exactly 70% resolves to 70 bucket → -10', () => {
+      const raw = validPersonaBase('A');
+      raw.salary_inflow_profile = { avg_monthly_credit: 82000, stability_pct: 70 };
+      const fv = ingest(raw);
+      const scores = scoreSegmentA(fv);
+      expect(scores.find((s) => s.code === 'salary_stability')?.points).toBe(-10);
+    });
+
+    it('salary_stability at exactly 85% resolves to 85 bucket → +15', () => {
+      const raw = validPersonaBase('A');
+      raw.salary_inflow_profile = { avg_monthly_credit: 82000, stability_pct: 85 };
+      const fv = ingest(raw);
+      const scores = scoreSegmentA(fv);
+      expect(scores.find((s) => s.code === 'salary_stability')?.points).toBe(15);
+    });
+
+    it('salary_stability at exactly 95% resolves to 95 bucket → +35', () => {
+      const raw = validPersonaBase('A');
+      raw.salary_inflow_profile = { avg_monthly_credit: 82000, stability_pct: 95 };
+      const fv = ingest(raw);
+      const scores = scoreSegmentA(fv);
+      expect(scores.find((s) => s.code === 'salary_stability')?.points).toBe(35);
+    });
+  });
 });
