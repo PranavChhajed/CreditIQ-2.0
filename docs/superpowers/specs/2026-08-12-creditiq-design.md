@@ -13,7 +13,7 @@ TypeScript, full stack, npm workspaces monorepo.
 - **Engine**: pure TypeScript library, zero runtime deps beyond a schema validator (zod). No HTTP, no DB, no I/O — input in, `Decision` out. This is what makes N2 (determinism) trivially true and what makes F11 (synthetic generation) just "call the engine."
 - **API**: Express. Thin — deserializes requests, calls the engine, persists to SQLite, serializes responses. Contains no scoring or policy logic.
 - **UI**: React + Vite.
-- **DB**: SQLite (`better-sqlite3`), one file, checked into `.gitignore`, created by a migration script.
+- **DB**: SQLite via Node's built-in `node:sqlite` (`DatabaseSync`) — swapped from `better-sqlite3` during implementation when native C++ compilation wasn't available in the build environment; same SQLite engine, no functional difference. One file, checked into `.gitignore`, created by a migration script.
 - **Test runner**: Vitest.
 
 ### Repo layout
