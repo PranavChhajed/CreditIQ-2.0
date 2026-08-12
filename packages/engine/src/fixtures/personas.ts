@@ -1,4 +1,4 @@
-import type { RawApplicant, Segment } from '@creditiq/shared';
+import type { Grade, RawApplicant, Segment } from '@creditiq/shared';
 
 function baseA(overrides: Partial<RawApplicant> = {}): RawApplicant {
   return {
@@ -44,16 +44,25 @@ export interface Persona {
   label: string;
   segment: Segment;
   expectedOutcome: 'approve' | 'reject';
+  /** The grade decide() actually returns for this persona (null for gate/score rejects). */
+  expectedGrade: Grade | null;
+  /**
+   * Set only for gate-rejection personas: the specific gate code that must fire first,
+   * so an accidental reorder of gates.ts can't silently swap which gate a persona
+   * demonstrates without breaking the test suite.
+   */
+  expectedReasonCode?: string;
   raw: RawApplicant;
 }
 
 export const PERSONAS: Persona[] = [
   {
     id: 'demo-1-salaried-clean', label: 'Demo Case 1: Salaried, clean → full approval', segment: 'A',
-    expectedOutcome: 'approve', raw: baseA({ applicant_id: 'demo-1-salaried-clean' }),
+    expectedOutcome: 'approve', expectedGrade: 'A1', raw: baseA({ applicant_id: 'demo-1-salaried-clean' }),
   },
   {
     id: 'a-clean-mid-grade', label: 'Salaried, mid-grade, partial reduction', segment: 'A', expectedOutcome: 'approve',
+    expectedGrade: 'B2',
     raw: baseA({
       applicant_id: 'a-clean-mid-grade', bureau_score: 660, epfo_employment_vintage_months: 30,
       salary_inflow_profile: { avg_monthly_credit: 60000, stability_pct: 80 },
@@ -62,7 +71,7 @@ export const PERSONAS: Persona[] = [
   },
   {
     id: 'demo-2-msme-poor-gst', label: 'Demo Case 2: MSME, clean bureau, poor GST filing → reduced limit',
-    segment: 'D', expectedOutcome: 'approve',
+    segment: 'D', expectedOutcome: 'approve', expectedGrade: 'B2',
     raw: baseD({
       applicant_id: 'demo-2-msme-poor-gst',
       gst_filing_profile: { late_filings_12m: 7, total_filings_12m: 12 },
@@ -71,6 +80,7 @@ export const PERSONAS: Persona[] = [
   },
   {
     id: 'd-clean-high-grade', label: 'MSME, clean, high grade', segment: 'D', expectedOutcome: 'approve',
+    expectedGrade: 'A1',
     raw: baseD({
       applicant_id: 'd-clean-high-grade', bureau_score: 800, gst_registration_vintage_months: 84,
       requested_amount: 900000,
@@ -78,52 +88,59 @@ export const PERSONAS: Persona[] = [
   },
   {
     id: 'demo-3-live-overdue', label: 'Demo Case 3: Live overdue → gate reject', segment: 'A',
-    expectedOutcome: 'reject', raw: baseA({ applicant_id: 'demo-3-live-overdue', live_overdue_amount: 5000 }),
+    expectedOutcome: 'reject', expectedGrade: null, expectedReasonCode: 'BUR_LIVE_OVERDUE',
+    raw: baseA({ applicant_id: 'demo-3-live-overdue', live_overdue_amount: 5000 }),
   },
   {
     id: 'gate-severe-delinquency', label: 'Severe recent delinquency → gate reject', segment: 'A',
-    expectedOutcome: 'reject', raw: baseA({ applicant_id: 'gate-severe-delinquency', max_dpd_12m: 95 }),
+    expectedOutcome: 'reject', expectedGrade: null, expectedReasonCode: 'BUR_RECENT_SEVERE_DELINQ',
+    raw: baseA({ applicant_id: 'gate-severe-delinquency', max_dpd_12m: 95 }),
   },
   {
     id: 'gate-suit-filed', label: 'Suit filed → gate reject', segment: 'A',
-    expectedOutcome: 'reject', raw: baseA({ applicant_id: 'gate-suit-filed', suit_filed: true }),
+    expectedOutcome: 'reject', expectedGrade: null, expectedReasonCode: 'BUR_SUIT_FILED',
+    raw: baseA({ applicant_id: 'gate-suit-filed', suit_filed: true }),
   },
   {
     id: 'gate-settlement', label: 'Settlement in 24m → gate reject', segment: 'D',
-    expectedOutcome: 'reject', raw: baseD({ applicant_id: 'gate-settlement', settlement_last_24m: true }),
+    expectedOutcome: 'reject', expectedGrade: null, expectedReasonCode: 'BUR_SETTLEMENT',
+    raw: baseD({ applicant_id: 'gate-settlement', settlement_last_24m: true }),
   },
   {
     id: 'gate-enquiry-velocity', label: 'Enquiry velocity (7 lenders/30d) → gate reject', segment: 'A',
-    expectedOutcome: 'reject',
+    expectedOutcome: 'reject', expectedGrade: null, expectedReasonCode: 'BUR_ENQUIRY_VELOCITY',
     raw: baseA({ applicant_id: 'gate-enquiry-velocity', num_distinct_lenders_30d: 7, num_enquiries_30d: 9 }),
   },
   {
     id: 'gate-thin-file', label: 'Thin file / no bureau hit → gate reject', segment: 'A',
-    expectedOutcome: 'reject', raw: baseA({ applicant_id: 'gate-thin-file', bureau_score: null, num_tradelines: 0 }),
+    expectedOutcome: 'reject', expectedGrade: null, expectedReasonCode: 'BUR_THIN_FILE',
+    raw: baseA({ applicant_id: 'gate-thin-file', bureau_score: null, num_tradelines: 0 }),
   },
   {
     id: 'gate-foir-exceeded', label: 'FOIR exceeds product cap → gate reject', segment: 'D',
-    expectedOutcome: 'reject', raw: baseD({ applicant_id: 'gate-foir-exceeded', existing_monthly_obligations: 90000 }),
+    expectedOutcome: 'reject', expectedGrade: null, expectedReasonCode: 'CAP_FOIR_EXCEEDED',
+    raw: baseD({ applicant_id: 'gate-foir-exceeded', existing_monthly_obligations: 90000 }),
   },
   {
     id: 'gate-age-tenure', label: 'Age + tenure > 60 → gate reject', segment: 'A',
-    expectedOutcome: 'reject',
+    expectedOutcome: 'reject', expectedGrade: null, expectedReasonCode: 'AGE_TENURE_MISMATCH',
     raw: baseA({ applicant_id: 'gate-age-tenure', applicant_age_years: 55, requested_tenure_months: 72 }),
   },
   {
     id: 'gate-emp-vintage', label: 'Segment A, <12mo EPFO vintage → gate reject', segment: 'A',
-    expectedOutcome: 'reject', raw: baseA({ applicant_id: 'gate-emp-vintage', epfo_employment_vintage_months: 5 }),
+    expectedOutcome: 'reject', expectedGrade: null, expectedReasonCode: 'EMP_INSUFFICIENT_VINTAGE',
+    raw: baseA({ applicant_id: 'gate-emp-vintage', epfo_employment_vintage_months: 5 }),
   },
   {
     id: 'gate-biz-vintage', label: 'Segment D, <24mo GST vintage → gate reject', segment: 'D',
-    expectedOutcome: 'reject',
+    expectedOutcome: 'reject', expectedGrade: null, expectedReasonCode: 'BIZ_INSUFFICIENT_VINTAGE',
     raw: baseD({
       applicant_id: 'gate-biz-vintage', gst_registration_vintage_months: 10, requested_amount: 900000,
     }),
   },
   {
     id: 'd-borderline-min-ticket', label: 'MSME, borderline score, min ticket', segment: 'D',
-    expectedOutcome: 'approve',
+    expectedOutcome: 'approve', expectedGrade: 'B3',
     raw: baseD({
       applicant_id: 'd-borderline-min-ticket', bureau_score: 620,
       gst_filing_profile: { late_filings_12m: 4, total_filings_12m: 12 },
@@ -134,7 +151,7 @@ export const PERSONAS: Persona[] = [
   },
   {
     id: 'a-score-below-500', label: 'Salaried, passes gates but scores below 500 → score reject', segment: 'A',
-    expectedOutcome: 'reject',
+    expectedOutcome: 'reject', expectedGrade: null,
     raw: baseA({
       applicant_id: 'a-score-below-500', bureau_score: 610, credit_utilization_pct_current: 80,
       credit_utilization_pct_3m_ago: 60, existing_monthly_obligations: 8000,

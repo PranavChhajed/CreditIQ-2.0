@@ -10,9 +10,13 @@ describe('synthetic personas (PRD §12 acceptance test)', () => {
   });
 
   for (const persona of PERSONAS) {
-    it(`${persona.id}: outcome is ${persona.expectedOutcome}`, () => {
+    it(`${persona.id}: outcome is ${persona.expectedOutcome}, grade is ${persona.expectedGrade}`, () => {
       const decision = decide(persona.raw);
       expect(decision.outcome).toBe(persona.expectedOutcome);
+      expect(decision.grade).toBe(persona.expectedGrade);
+      if (persona.expectedReasonCode) {
+        expect(decision.reason_codes[0].code).toBe(persona.expectedReasonCode);
+      }
     });
   }
 
