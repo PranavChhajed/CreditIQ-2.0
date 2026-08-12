@@ -1,35 +1,33 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { strict as assert } from 'assert';
+import { test } from 'node:test';
 import { openDb } from './db.js';
 import { saveDecision, getDecision, listDecisions } from './repository.js';
 import { decide } from '@creditiq/engine';
 import { PERSONAS } from '@creditiq/engine/src/fixtures/personas.js';
 
-describe('repository', () => {
-  let db: ReturnType<typeof openDb>;
-
-  beforeEach(() => {
-    db = openDb(':memory:');
-  });
-
-  it('round-trips a decision including reason codes and trace', () => {
+test('repository', async (t) => {
+  await t.test('round-trips a decision including reason codes and trace', () => {
+    const db = openDb(':memory:');
     const persona = PERSONAS.find((p) => p.id === 'demo-2-msme-poor-gst')!;
     const decision = decide(persona.raw);
     saveDecision(db, decision);
     const fetched = getDecision(db, decision.applicant_id);
-    expect(fetched?.outcome).toBe(decision.outcome);
-    expect(fetched?.offer_amount).toBe(decision.offer_amount);
-    expect(fetched?.reason_codes).toEqual(decision.reason_codes);
-    expect(fetched?.trace).toEqual(decision.trace);
+    assert.equal(fetched?.outcome, decision.outcome);
+    assert.equal(fetched?.offer_amount, decision.offer_amount);
+    assert.deepEqual(fetched?.reason_codes, decision.reason_codes);
+    assert.deepEqual(fetched?.trace, decision.trace);
   });
 
-  it('lists recent decisions', () => {
+  await t.test('lists recent decisions', () => {
+    const db = openDb(':memory:');
     const persona = PERSONAS[0];
     saveDecision(db, decide(persona.raw));
     const list = listDecisions(db, 10);
-    expect(list.length).toBe(1);
+    assert.equal(list.length, 1);
   });
 
-  it('returns null for an unknown applicant', () => {
-    expect(getDecision(db, 'does-not-exist')).toBeNull();
+  await t.test('returns null for an unknown applicant', () => {
+    const db = openDb(':memory:');
+    assert.equal(getDecision(db, 'does-not-exist'), null);
   });
 });
