@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import type { Decision } from '@creditiq/shared';
 
-export function WaterfallTrace({ decision }: { decision: any }) {
+export function WaterfallTrace({ decision }: { decision: Decision }) {
   const [open, setOpen] = useState(false);
   return (
     <section>
@@ -9,7 +10,7 @@ export function WaterfallTrace({ decision }: { decision: any }) {
       </button>
       {open && (
         <ol>
-          {decision.trace.map((step: any) => (
+          {decision.trace.map((step) => (
             <li key={step.step}>
               <strong>{step.stage}</strong> — {step.outcome}
               <pre>{JSON.stringify(step.detail, null, 2)}</pre>

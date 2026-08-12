@@ -1,4 +1,6 @@
-export function DecisionPanel({ decision }: { decision: any }) {
+import type { Decision } from '@creditiq/shared';
+
+export function DecisionPanel({ decision }: { decision: Decision }) {
   const badgeColor = decision.outcome === 'approve' ? 'green' : 'crimson';
   return (
     <section>

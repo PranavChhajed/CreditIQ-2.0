@@ -4,10 +4,23 @@ import { fetchPersonas, type PersonaSummary } from '../api.js';
 export function PersonaPicker({ onSelect }: { onSelect: (id: string) => void }) {
   const [personas, setPersonas] = useState<PersonaSummary[]>([]);
   const [selected, setSelected] = useState<string>('');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchPersonas().then(setPersonas);
+    fetchPersonas()
+      .then(setPersonas)
+      .catch(() => {
+        setError('Could not load applicants — is the API server running on http://localhost:3001?');
+      });
   }, []);
+
+  if (error) {
+    return (
+      <div>
+        <p style={{ color: 'crimson' }}>{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div>
